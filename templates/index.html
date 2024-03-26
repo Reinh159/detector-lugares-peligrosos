@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Lugares Peligrosos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <header>Detector de Lugares Peligrosos</header>
+    <div id="map"></div>
+    <div class="container">
+        <form id="location-form" class="form-group">
+            <label for="latitud">Latitud:</label>
+            <input type="text" id="latitud" name="latitud" placeholder="Ej. -12.345678"><br>
+            <label for="longitud">Longitud:</label>
+            <input type="text" id="longitud" name="longitud" placeholder="Ej. -87.654321"><br>
+            <button type="submit">Agregar Lugar Peligroso</button>
+        </form>
+        <button id="locate-user">Ubicar Usuario</button>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([-13.4255437, -76.1367382], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 18,
+        }).addTo(map);
+
+        var dangerMarker = L.circleMarker([-13.4255437, -76.1367382], {
+            radius: 15,
+            color: 'red',
+            fillOpacity: 1
+        }).addTo(map);
+
+        var userMarker = L.circleMarker([0, 0], {
+            radius: 10,
+            color: 'blue',
+            fillOpacity: 1
+        }).addTo(map);
+
+        function updateMarkerSize() {
+            var zoomLevel = map.getZoom();
+            var scaleFactor = 2;
+            var newRadius = 15 / Math.pow(scaleFactor, zoomLevel);
+            dangerMarker.setRadius(newRadius);
+        }
+
+        map.on('zoomend', updateMarkerSize);
+        map.on('move', updateMarkerSize);
+
+        document.getElementById('location-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var latitud = parseFloat(document.getElementById('latitud').value);
+            var longitud = parseFloat(document.getElementById('longitud').value);
+
+            var newMarker = L.marker([latitud, longitud], {
+                icon: L.icon({
+                    iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
+                })
+            }).addTo(map);
+
+            map.setView([latitud, longitud], 15);
+            document.getElementById('latitud').value = '';
+            document.getElementById('longitud').value = '';
+
+            alert('Lugar peligroso agregado exitosamente.');
+        });
+
+        // usuario
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var userLat = position.coords.latitude;
+                var userLng = position.coords.longitude;
+
+                userMarker.setLatLng([userLat, userLng]);
+            });
+        }
+
+        // Centrar en la zona chincha
+        document.getElementById('locate-user').addEventListener('click', function() {
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var userLat = position.coords.latitude;
+                    var userLng = position.coords.longitude;
+
+                    map.setView([userLat, userLng], 15);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
